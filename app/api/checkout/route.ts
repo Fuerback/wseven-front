@@ -68,6 +68,7 @@ export async function POST(request: Request) {
         customer_city: customer?.city,
         customer_state: customer?.state,
       },
+      auto_return: "approved",
       back_urls: {
         success: `${baseUrl}/success`,
         failure: `${baseUrl}/failure`,
