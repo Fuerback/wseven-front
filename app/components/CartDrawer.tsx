@@ -5,6 +5,7 @@ import { X, Plus, Minus, Trash2, ShoppingBag, Loader2 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { formatPrice } from "../lib/products";
 import MercadoPagoButton from "./MercadoPagoButton";
+import CheckoutForm, { type CustomerData } from "./CheckoutForm";
 
 export default function CartDrawer() {
   const {
@@ -18,11 +19,12 @@ export default function CartDrawer() {
     closeDrawer,
   } = useCart();
 
+  const [step, setStep] = useState<"cart" | "form" | "payment">("cart");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
 
-  async function handleCheckout() {
+  async function handleFormSubmit(customer: CustomerData) {
     setIsLoading(true);
     setError(null);
     setPreferenceId(null);
@@ -38,6 +40,7 @@ export default function CartDrawer() {
             quantity: item.quantity,
             unit_price: item.product.price,
           })),
+          customer,
         }),
       });
 
@@ -48,6 +51,7 @@ export default function CartDrawer() {
       }
 
       setPreferenceId(data.id);
+      setStep("payment");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Erro ao processar checkout"
@@ -69,6 +73,40 @@ export default function CartDrawer() {
 
       {/* Drawer */}
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-dark-green border-l border-green/30 z-50 flex flex-col shadow-2xl">
+        {/* Form step */}
+        {step === "form" && (
+          <CheckoutForm
+            onSubmit={handleFormSubmit}
+            onBack={() => setStep("cart")}
+            isLoading={isLoading}
+          />
+        )}
+
+        {/* Payment step */}
+        {step === "payment" && preferenceId && (
+          <>
+            <div className="flex items-center justify-between p-6 border-b border-green/30">
+              <h2 className="text-lg font-bold text-cream">Pagamento</h2>
+              <button
+                onClick={() => { setStep("cart"); setPreferenceId(null); }}
+                className="text-cream/60 hover:text-cream transition-colors p-1"
+                aria-label="Fechar"
+              >
+                <X size={22} />
+              </button>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
+              <p className="text-cream/60 text-sm text-center">
+                Clique no botão abaixo para finalizar o pagamento com Mercado Pago.
+              </p>
+              <MercadoPagoButton preferenceId={preferenceId} />
+            </div>
+          </>
+        )}
+
+        {/* Cart step */}
+        {step === "cart" && (
+          <>
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-green/30">
           <div className="flex items-center gap-3">
@@ -188,35 +226,18 @@ export default function CartDrawer() {
             {error && (
               <p className="text-red-400 text-xs text-center">{error}</p>
             )}
-            {preferenceId ? (
-              <>
-                <MercadoPagoButton preferenceId={preferenceId} />
-                <p className="text-cream/30 text-xs text-center">
-                  Clique no botão acima para pagar com Mercado Pago.
-                </p>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleCheckout}
-                  disabled={isLoading}
-                  className="bg-brown hover:bg-brown/80 disabled:opacity-60 disabled:cursor-not-allowed text-dark-green font-bold py-4 rounded-full text-center text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brown/20 cursor-pointer"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    "Finalizar Compra"
-                  )}
-                </button>
-                <p className="text-cream/30 text-xs text-center">
-                  Você será redirecionado ao Mercado Pago para pagamento seguro.
-                </p>
-              </>
-            )}
+            <button
+              onClick={() => setStep("form")}
+              className="bg-brown hover:bg-brown/80 text-dark-green font-bold py-4 rounded-full text-center text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brown/20 cursor-pointer"
+            >
+              Finalizar Compra
+            </button>
+            <p className="text-cream/30 text-xs text-center">
+              Você será redirecionado ao Mercado Pago para pagamento seguro.
+            </p>
           </div>
+        )}
+        </>
         )}
       </div>
     </>

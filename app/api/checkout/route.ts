@@ -8,9 +8,23 @@ interface CartItemRequest {
   unit_price: number;
 }
 
+interface CustomerRequest {
+  name: string;
+  email: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement: string;
+  city: string;
+  state: string;
+}
+
 export async function POST(request: Request) {
   try {
-    const { items } = (await request.json()) as { items: CartItemRequest[] };
+    const { items, customer } = (await request.json()) as {
+      items: CartItemRequest[];
+      customer: CustomerRequest;
+    };
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -28,6 +42,9 @@ export async function POST(request: Request) {
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.trim() || "http://localhost:3000";
 
+    const [firstName, ...lastParts] = (customer?.name || "").trim().split(" ");
+    const lastName = lastParts.join(" ") || firstName;
+
     const response = await preference.create({
       body: {
         items: items.map((item) => ({
@@ -37,12 +54,34 @@ export async function POST(request: Request) {
           unit_price: item.unit_price,
           currency_id: "BRL",
         })),
+        payer: {
+          name: firstName,
+          surname: lastName,
+          email: customer?.email,
+          address: {
+            zip_code: customer?.cep?.replace(/\D/g, ""),
+            street_name: customer?.street,
+            street_number: customer?.number || "0",
+          },
+        },
+        metadata: {
+          customer_name: customer?.name,
+          customer_email: customer?.email,
+          customer_cep: customer?.cep,
+          customer_street: customer?.street,
+          customer_number: customer?.number,
+          customer_complement: customer?.complement,
+          customer_city: customer?.city,
+          customer_state: customer?.state,
+        },
         back_urls: {
           success: `${baseUrl}/success`,
           failure: `${baseUrl}/failure`,
           pending: `${baseUrl}/pending`,
         },
-        //auto_return: "approved",
+        ...(baseUrl.startsWith("https://")
+          ? { notification_url: `${baseUrl}/api/webhooks/mercadopago` }
+          : {}),
       },
     });
 
