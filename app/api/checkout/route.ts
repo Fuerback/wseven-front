@@ -12,6 +12,7 @@ interface CartItemRequest {
 interface CustomerRequest {
   name: string;
   email: string;
+  cpf: string;
   cep: string;
   street: string;
   number: string;
@@ -52,6 +53,10 @@ export async function POST(request: Request) {
         name: firstName,
         surname: lastName,
         email: customer?.email,
+        identification: {
+          type: "CPF",
+          number: customer?.cpf?.replace(/\D/g, ""),
+        },
         address: {
           zip_code: customer?.cep?.replace(/\D/g, ""),
           street_name: customer?.street,
@@ -61,6 +66,7 @@ export async function POST(request: Request) {
       metadata: {
         customer_name: customer?.name,
         customer_email: customer?.email,
+        customer_cpf: customer?.cpf,
         customer_cep: customer?.cep,
         customer_street: customer?.street,
         customer_number: customer?.number,

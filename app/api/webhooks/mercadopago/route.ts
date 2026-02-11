@@ -51,8 +51,8 @@ export async function POST(request: Request) {
 
     const metadata = payment.metadata || {};
     const customer = {
-      name: metadata.customer_name || "",
-      email: metadata.customer_email || "",
+      name: metadata.customer_name || payment.payer?.first_name || "",
+      email: metadata.customer_email || payment.payer?.email || "",
       cep: metadata.customer_cep || "",
       street: metadata.customer_street || "",
       number: metadata.customer_number || "",

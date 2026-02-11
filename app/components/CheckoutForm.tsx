@@ -6,6 +6,7 @@ import { Loader2, MapPin, ArrowLeft } from "lucide-react";
 export interface CustomerData {
   name: string;
   email: string;
+  cpf: string;
   cep: string;
   street: string;
   number: string;
@@ -24,6 +25,7 @@ export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFo
   const [form, setForm] = useState<CustomerData>({
     name: "",
     email: "",
+    cpf: "",
     cep: "",
     street: "",
     number: "",
@@ -41,6 +43,39 @@ export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFo
     if (formErrors[field]) {
       setFormErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+  }
+
+  function handleCpfChange(value: string) {
+    let masked = value.replace(/\D/g, "");
+    if (masked.length > 11) masked = masked.slice(0, 11);
+    if (masked.length > 9) {
+      masked = masked.slice(0, 3) + "." + masked.slice(3, 6) + "." + masked.slice(6, 9) + "-" + masked.slice(9);
+    } else if (masked.length > 6) {
+      masked = masked.slice(0, 3) + "." + masked.slice(3, 6) + "." + masked.slice(6);
+    } else if (masked.length > 3) {
+      masked = masked.slice(0, 3) + "." + masked.slice(3);
+    }
+    updateField("cpf", masked);
+  }
+
+  function validateCpf(cpf: string): boolean {
+    const digits = cpf.replace(/\D/g, "");
+    if (digits.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(digits)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
+    let rest = (sum * 10) % 11;
+    if (rest === 10) rest = 0;
+    if (rest !== parseInt(digits[9])) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
+    rest = (sum * 10) % 11;
+    if (rest === 10) rest = 0;
+    if (rest !== parseInt(digits[10])) return false;
+
+    return true;
   }
 
   async function handleCepBlur() {
@@ -90,6 +125,8 @@ export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFo
     if (!form.email.trim()) errors.email = "Email é obrigatório";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errors.email = "Email inválido";
+    if (!form.cpf.trim()) errors.cpf = "CPF é obrigatório";
+    else if (!validateCpf(form.cpf)) errors.cpf = "CPF inválido";
     if (form.cep.replace(/\D/g, "").length !== 8) errors.cep = "CEP inválido";
     if (!form.number.trim()) errors.number = "Número é obrigatório";
     if (!form.city.trim()) errors.city = "Cidade é obrigatória";
@@ -152,6 +189,20 @@ export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFo
             className={inputClass}
           />
           {formErrors.email && <p className={errorClass}>{formErrors.email}</p>}
+        </div>
+
+        {/* CPF */}
+        <div>
+          <label className={labelClass}>CPF *</label>
+          <input
+            type="text"
+            value={form.cpf}
+            onChange={(e) => handleCpfChange(e.target.value)}
+            placeholder="000.000.000-00"
+            className={inputClass}
+            maxLength={14}
+          />
+          {formErrors.cpf && <p className={errorClass}>{formErrors.cpf}</p>}
         </div>
 
         {/* CEP */}
