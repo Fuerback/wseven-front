@@ -1,13 +1,26 @@
 export const runtime = 'edge';
 
-import { MercadoPagoConfig, Payment } from "mercadopago";
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { buildCustomerEmail, buildSellerEmail } from "../../../lib/emails";
+
+async function sendEmail(apiKey: string, from: string, to: string, subject: string, html: string) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ from, to, subject, html }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Resend API error: ${err}`);
+  }
+  return res.json();
+}
 
 export async function POST(request: Request) {
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
     const body = await request.json();
 
     if (body.type !== "payment") {
@@ -19,12 +32,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
-    const client = new MercadoPagoConfig({
-      accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN!,
+    const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: {
+        "Authorization": `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
     });
 
-    const paymentClient = new Payment(client);
-    const payment = await paymentClient.get({ id: paymentId });
+    if (!mpResponse.ok) {
+      console.error("MercadoPago API error:", await mpResponse.text());
+      return NextResponse.json({ received: true, error: "mp_api_error" }, { status: 200 });
+    }
+
+    const payment = await mpResponse.json();
 
     if (payment.status !== "approved") {
       return NextResponse.json({ received: true, status: payment.status });
@@ -59,28 +78,19 @@ export async function POST(request: Request) {
 
     const fromAddress = process.env.EMAIL_FROM || "W Seven <onboarding@resend.dev>";
     const sellerEmail = process.env.NOTIFICATION_EMAIL!;
+    const apiKey = process.env.RESEND_API_KEY!;
 
     const emailPromises = [];
 
     if (customer.email) {
       emailPromises.push(
-        resend.emails.send({
-          from: fromAddress,
-          to: customer.email,
-          subject: `Compra Aprovada — Pedido #${paymentId}`,
-          html: buildCustomerEmail(emailData),
-        })
+        sendEmail(apiKey, fromAddress, customer.email, `Compra Aprovada — Pedido #${paymentId}`, buildCustomerEmail(emailData))
       );
     }
 
     if (sellerEmail) {
       emailPromises.push(
-        resend.emails.send({
-          from: fromAddress,
-          to: sellerEmail,
-          subject: `Nova Venda #${paymentId} — ${customer.name}`,
-          html: buildSellerEmail(emailData),
-        })
+        sendEmail(apiKey, fromAddress, sellerEmail, `Nova Venda #${paymentId} — ${customer.name}`, buildSellerEmail(emailData))
       );
     }
 
