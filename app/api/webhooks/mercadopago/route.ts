@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
