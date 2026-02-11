@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "npx wrangler pages deploy"
+    "deploy": "opennextjs-cloudflare build && wrangler pages deploy"
   },
   "dependencies": {
     "@mercadopago/sdk-react": "^1.0.7",
@@ -19,6 +19,7 @@
     "resend": "^6.9.2"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.16.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
