@@ -94,7 +94,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Erro ao criar preferência:", error);
     return NextResponse.json(
-      { error: "Erro ao processar checkout" },
+      { error: "Erro ao processar checkout", details: String(error) },
       { status: 500 }
     );
   }
