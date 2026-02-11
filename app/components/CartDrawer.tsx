@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Minus, Trash2, ShoppingBag, ExternalLink, Loader2 } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingBag, Loader2 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { formatPrice } from "../lib/products";
+import MercadoPagoButton from "./MercadoPagoButton";
 
 export default function CartDrawer() {
   const {
@@ -19,10 +20,12 @@ export default function CartDrawer() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
 
   async function handleCheckout() {
     setIsLoading(true);
     setError(null);
+    setPreferenceId(null);
 
     try {
       const response = await fetch("/api/checkout", {
@@ -44,11 +47,12 @@ export default function CartDrawer() {
         throw new Error(data.error || "Erro ao processar checkout");
       }
 
-      window.location.href = data.init_point;
+      setPreferenceId(data.id);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Erro ao processar checkout"
       );
+    } finally {
       setIsLoading(false);
     }
   }
@@ -184,26 +188,34 @@ export default function CartDrawer() {
             {error && (
               <p className="text-red-400 text-xs text-center">{error}</p>
             )}
-            <button
-              onClick={handleCheckout}
-              disabled={isLoading}
-              className="bg-brown hover:bg-brown/80 disabled:opacity-60 disabled:cursor-not-allowed text-dark-green font-bold py-4 rounded-full text-center text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brown/20 cursor-pointer"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  Finalizar Compra
-                  <ExternalLink size={18} />
-                </>
-              )}
-            </button>
-            <p className="text-cream/30 text-xs text-center">
-              Você será redirecionado ao Mercado Pago para pagamento seguro.
-            </p>
+            {preferenceId ? (
+              <>
+                <MercadoPagoButton preferenceId={preferenceId} />
+                <p className="text-cream/30 text-xs text-center">
+                  Clique no botão acima para pagar com Mercado Pago.
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleCheckout}
+                  disabled={isLoading}
+                  className="bg-brown hover:bg-brown/80 disabled:opacity-60 disabled:cursor-not-allowed text-dark-green font-bold py-4 rounded-full text-center text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brown/20 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    "Finalizar Compra"
+                  )}
+                </button>
+                <p className="text-cream/30 text-xs text-center">
+                  Você será redirecionado ao Mercado Pago para pagamento seguro.
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>

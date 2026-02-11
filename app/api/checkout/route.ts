@@ -28,9 +28,6 @@ export async function POST(request: Request) {
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL?.trim() || "http://localhost:3000";
 
-    //print baseUrl
-    console.log("BASE URL :", baseUrl);
-
     const response = await preference.create({
       body: {
         items: items.map((item) => ({
