@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: "W Seven Special Coffee | Café Especial de Alta Qualidade",
   description:
     "Café especial cultivado com dedicação nas melhores regiões do Brasil. Conheça o Café do Serrado e o Café da Montanha.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({
