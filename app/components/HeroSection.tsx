@@ -16,7 +16,7 @@ export default function HeroSection() {
         <div className="relative">
           <div className="absolute inset-0 bg-tan/20 rounded-full blur-2xl scale-150" />
           <Image
-            src="/logo.png"
+            src="/logo_green.png"
             alt="W Seven Special Coffee"
             width={220}
             height={220}

@@ -37,7 +37,7 @@ export default function SobrePage() {
               <div className="relative">
                 <div className="absolute inset-0 bg-tan/20 rounded-full blur-3xl scale-125" />
                 <Image
-                  src="/logo.png"
+                  src="/logo_green.png"
                   alt="W Seven Special Coffee"
                   width={300}
                   height={300}

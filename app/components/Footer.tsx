@@ -11,7 +11,7 @@ export default function Footer() {
           <div className="flex flex-col gap-4">
             <Link href="/" className="flex items-center gap-3">
               <Image
-                src="/logo.png"
+                src="/logo_green.png"
                 alt="W Seven Special Coffee"
                 width={50}
                 height={50}
@@ -64,7 +64,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2 text-cream/60 text-sm">
                 <MapPin size={16} className="text-green" />
-                <span>Minas Gerais, Brasil</span>
+                <span>Florianópolis, Santa Catarina, Brasil</span>
               </div>
               <div className="flex items-center gap-2 text-cream/60 text-sm">
                 <Coffee size={16} className="text-green" />

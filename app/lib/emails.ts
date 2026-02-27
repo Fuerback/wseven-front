@@ -100,7 +100,7 @@ export function buildCustomerEmail(data: EmailData): string {
     <!-- Footer -->
     <div style="background-color: #1a3a2a; padding: 24px; text-align: center;">
       <p style="color: #f5f0e8; margin: 0; font-size: 12px;">
-        W Seven Special Coffee · Minas Gerais, Brasil
+        W Seven Special Coffee · Florianópolis, Santa Catarina, Brasil
       </p>
     </div>
   </div>
