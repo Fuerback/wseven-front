@@ -60,7 +60,7 @@ export default function Footer() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 text-cream/60 text-sm">
                 <Mail size={16} className="text-green" />
-                <span>contato@wseven.com.br</span>
+                <span>contato@wsevencoffee.com</span>
               </div>
               <div className="flex items-center gap-2 text-cream/60 text-sm">
                 <MapPin size={16} className="text-green" />

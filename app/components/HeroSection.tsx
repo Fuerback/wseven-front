@@ -18,8 +18,8 @@ export default function HeroSection() {
           <Image
             src="/logo_green.png"
             alt="W Seven Special Coffee"
-            width={220}
-            height={220}
+            width={350}
+            height={350}
             className="relative z-10 drop-shadow-2xl"
             priority
           />
