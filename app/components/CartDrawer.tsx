@@ -269,78 +269,78 @@ export default function CartDrawer() {
               >
                 Limpar carrinho
               </button>
+
+              {/* Shipping simulator */}
+              <div className="flex flex-col gap-2 border-t border-green/20 pt-4 mt-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <Truck size={15} className="text-tan" />
+                  <span className="text-cream/70 text-xs font-medium">Calcular frete</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={shippingCep}
+                    onChange={(e) => handleShippingCepChange(e.target.value)}
+                    placeholder="00000-000"
+                    maxLength={9}
+                    className="flex-1 bg-green/10 border border-green/30 rounded-lg px-3 py-2 text-cream text-sm placeholder:text-cream/30 focus:outline-none focus:border-tan/60 transition-colors"
+                  />
+                  <button
+                    onClick={handleCalculateShipping}
+                    disabled={shippingLoading}
+                    className="bg-green/20 hover:bg-green/30 disabled:opacity-60 border border-green/30 text-cream text-sm font-medium px-3 py-2 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    {shippingLoading ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <ChevronRight size={14} />
+                    )}
+                    {shippingLoading ? "" : "Calcular"}
+                  </button>
+                </div>
+                {shippingError && (
+                  <p className="text-red-400 text-xs">{shippingError}</p>
+                )}
+
+                {/* Shipping options */}
+                {shippingCalculated && shippingOptions.length > 0 && (
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    {shippingOptions.map((option) => {
+                      const isSelected = selectedShipping?.id === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={() => setShipping(isSelected ? null : option)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-colors cursor-pointer ${
+                            isSelected
+                              ? "bg-tan/15 border-tan/60 text-cream"
+                              : "bg-green/10 border-green/20 text-cream/80 hover:border-green/50"
+                          }`}
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs font-semibold">
+                              {option.company.name} — {option.name}
+                            </span>
+                            <span className="text-cream/50 text-xs">
+                              {option.delivery_time} {option.delivery_time === 1 ? "dia útil" : "dias úteis"}
+                            </span>
+                          </div>
+                          <span className={`text-sm font-bold ${isSelected ? "text-tan" : "text-cream/80"}`}>
+                            {formatPrice(parseFloat(option.price))}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Footer with shipping + total + checkout */}
+        {/* Footer: totals + checkout */}
         {items.length > 0 && (
-          <div className="p-6 border-t border-green/30 flex flex-col gap-4">
-
-            {/* Shipping simulator */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2 mb-1">
-                <Truck size={15} className="text-tan" />
-                <span className="text-cream/70 text-xs font-medium">Calcular frete</span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={shippingCep}
-                  onChange={(e) => handleShippingCepChange(e.target.value)}
-                  placeholder="00000-000"
-                  maxLength={9}
-                  className="flex-1 bg-green/10 border border-green/30 rounded-lg px-3 py-2 text-cream text-sm placeholder:text-cream/30 focus:outline-none focus:border-tan/60 transition-colors"
-                />
-                <button
-                  onClick={handleCalculateShipping}
-                  disabled={shippingLoading}
-                  className="bg-green/20 hover:bg-green/30 disabled:opacity-60 border border-green/30 text-cream text-sm font-medium px-3 py-2 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  {shippingLoading ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <ChevronRight size={14} />
-                  )}
-                  {shippingLoading ? "" : "Calcular"}
-                </button>
-              </div>
-              {shippingError && (
-                <p className="text-red-400 text-xs">{shippingError}</p>
-              )}
-
-              {/* Shipping options */}
-              {shippingCalculated && shippingOptions.length > 0 && (
-                <div className="flex flex-col gap-1.5 mt-1">
-                  {shippingOptions.map((option) => {
-                    const isSelected = selectedShipping?.id === option.id;
-                    return (
-                      <button
-                        key={option.id}
-                        onClick={() => setShipping(isSelected ? null : option)}
-                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-colors cursor-pointer ${
-                          isSelected
-                            ? "bg-tan/15 border-tan/60 text-cream"
-                            : "bg-green/10 border-green/20 text-cream/80 hover:border-green/50"
-                        }`}
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-semibold">
-                            {option.company.name} — {option.name}
-                          </span>
-                          <span className="text-cream/50 text-xs">
-                            {option.delivery_time} {option.delivery_time === 1 ? "dia útil" : "dias úteis"}
-                          </span>
-                        </div>
-                        <span className={`text-sm font-bold ${isSelected ? "text-tan" : "text-cream/80"}`}>
-                          {formatPrice(parseFloat(option.price))}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+          <div className="p-6 border-t border-green/30 flex flex-col gap-3">
 
             {/* Totals */}
             {selectedShipping ? (
