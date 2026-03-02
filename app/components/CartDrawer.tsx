@@ -138,6 +138,7 @@ export default function CartDrawer() {
             onSubmit={handleFormSubmit}
             onBack={() => setStep("cart")}
             isLoading={isLoading}
+            lockedCep={shippingCep || undefined}
           />
         )}
 

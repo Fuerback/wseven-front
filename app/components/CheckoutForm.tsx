@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, MapPin, ArrowLeft } from "lucide-react";
 
 export interface CustomerData {
@@ -19,14 +19,15 @@ interface CheckoutFormProps {
   onSubmit: (data: CustomerData) => void;
   onBack: () => void;
   isLoading: boolean;
+  lockedCep?: string;
 }
 
-export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFormProps) {
+export default function CheckoutForm({ onSubmit, onBack, isLoading, lockedCep }: CheckoutFormProps) {
   const [form, setForm] = useState<CustomerData>({
     name: "",
     email: "",
     cpf: "",
-    cep: "",
+    cep: lockedCep ?? "",
     street: "",
     number: "",
     complement: "",
@@ -36,6 +37,30 @@ export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFo
 
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (lockedCep) {
+      const clean = lockedCep.replace(/\D/g, "");
+      if (clean.length === 8) {
+        setCepLoading(true);
+        fetch(`https://viacep.com.br/ws/${clean}/json/`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.erro) {
+              setForm((prev) => ({
+                ...prev,
+                street: data.logradouro || prev.street,
+                city: data.localidade || prev.city,
+                state: data.uf || prev.state,
+              }));
+            }
+          })
+          .catch(() => {})
+          .finally(() => setCepLoading(false));
+      }
+    }
+  }, [lockedCep]);
+
   const [formErrors, setFormErrors] = useState<Partial<Record<keyof CustomerData, string>>>({});
 
   function updateField(field: keyof CustomerData, value: string) {
@@ -212,10 +237,11 @@ export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFo
             <input
               type="text"
               value={form.cep}
-              onChange={(e) => handleCepChange(e.target.value)}
-              onBlur={handleCepBlur}
+              onChange={lockedCep ? undefined : (e) => handleCepChange(e.target.value)}
+              onBlur={lockedCep ? undefined : handleCepBlur}
+              readOnly={!!lockedCep}
               placeholder="00000-000"
-              className={inputClass}
+              className={`${inputClass} ${lockedCep ? "cursor-not-allowed opacity-70" : ""}`}
               maxLength={9}
             />
             {cepLoading && (
@@ -224,6 +250,9 @@ export default function CheckoutForm({ onSubmit, onBack, isLoading }: CheckoutFo
               </div>
             )}
           </div>
+          {lockedCep && (
+            <p className="text-cream/40 text-xs mt-1">CEP definido pelo cálculo de frete.</p>
+          )}
           {cepError && <p className={errorClass}>{cepError}</p>}
           {formErrors.cep && <p className={errorClass}>{formErrors.cep}</p>}
         </div>
