@@ -8,6 +8,18 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface ShippingOption {
+  id: number;
+  name: string;
+  price: string;
+  delivery_time: number;
+  company: {
+    id: number;
+    name: string;
+    picture?: string;
+  };
+}
+
 interface CartContextType {
   items: CartItem[];
   addItem: (product: Product) => void;
@@ -15,7 +27,10 @@ interface CartContextType {
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
+  subtotalPrice: number;
   totalPrice: number;
+  selectedShipping: ShippingOption | null;
+  setShipping: (option: ShippingOption | null) => void;
   isDrawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;
@@ -26,6 +41,7 @@ const CartContext = createContext<CartContextType | null>(null);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
 
   const addItem = useCallback((product: Product) => {
     setItems((prev) => {
@@ -60,13 +76,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => {
     setItems([]);
+    setSelectedShipping(null);
+  }, []);
+
+  const setShipping = useCallback((option: ShippingOption | null) => {
+    setSelectedShipping(option);
   }, []);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce(
+  const subtotalPrice = items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
+  const shippingCost = selectedShipping ? parseFloat(selectedShipping.price) : 0;
+  const totalPrice = subtotalPrice + shippingCost;
 
   const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
   const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
@@ -80,7 +103,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         clearCart,
         totalItems,
+        subtotalPrice,
         totalPrice,
+        selectedShipping,
+        setShipping,
         isDrawerOpen,
         openDrawer,
         closeDrawer,

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Minus, Trash2, ShoppingBag, Loader2 } from "lucide-react";
-import { useCart } from "../context/CartContext";
+import { X, Plus, Minus, Trash2, ShoppingBag, Loader2, Truck, ChevronRight } from "lucide-react";
+import { useCart, type ShippingOption } from "../context/CartContext";
 import { formatPrice } from "../lib/products";
 import MercadoPagoButton from "./MercadoPagoButton";
 import CheckoutForm, { type CustomerData } from "./CheckoutForm";
@@ -14,7 +14,10 @@ export default function CartDrawer() {
     updateQuantity,
     clearCart,
     totalItems,
+    subtotalPrice,
     totalPrice,
+    selectedShipping,
+    setShipping,
     isDrawerOpen,
     closeDrawer,
   } = useCart();
@@ -23,6 +26,62 @@ export default function CartDrawer() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preferenceId, setPreferenceId] = useState<string | null>(null);
+
+  const [shippingCep, setShippingCep] = useState("");
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState<string | null>(null);
+  const [shippingCalculated, setShippingCalculated] = useState(false);
+
+  function handleShippingCepChange(value: string) {
+    let masked = value.replace(/\D/g, "");
+    if (masked.length > 8) masked = masked.slice(0, 8);
+    if (masked.length > 5) masked = masked.slice(0, 5) + "-" + masked.slice(5);
+    setShippingCep(masked);
+    if (shippingCalculated) {
+      setShippingCalculated(false);
+      setShippingOptions([]);
+      setShipping(null);
+    }
+  }
+
+  async function handleCalculateShipping() {
+    const cleanCep = shippingCep.replace(/\D/g, "");
+    if (cleanCep.length !== 8) {
+      setShippingError("Digite um CEP válido");
+      return;
+    }
+    setShippingLoading(true);
+    setShippingError(null);
+    setShippingOptions([]);
+    setShipping(null);
+
+    try {
+      const response = await fetch("/api/melhor-envio/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postal_code: cleanCep, quantity: totalItems }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao calcular frete");
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        setShippingError("Nenhuma opção de frete disponível para este CEP");
+        return;
+      }
+
+      setShippingOptions(data);
+      setShippingCalculated(true);
+    } catch (err) {
+      setShippingError(err instanceof Error ? err.message : "Erro ao calcular frete");
+    } finally {
+      setShippingLoading(false);
+    }
+  }
 
   async function handleFormSubmit(customer: CustomerData) {
     setIsLoading(true);
@@ -214,27 +273,118 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {/* Footer with total + checkout */}
+        {/* Footer with shipping + total + checkout */}
         {items.length > 0 && (
           <div className="p-6 border-t border-green/30 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-cream/60 text-sm">Total</span>
-              <span className="text-2xl font-bold text-tan">
-                {formatPrice(totalPrice)}
-              </span>
+
+            {/* Shipping simulator */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Truck size={15} className="text-tan" />
+                <span className="text-cream/70 text-xs font-medium">Calcular frete</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={shippingCep}
+                  onChange={(e) => handleShippingCepChange(e.target.value)}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  className="flex-1 bg-green/10 border border-green/30 rounded-lg px-3 py-2 text-cream text-sm placeholder:text-cream/30 focus:outline-none focus:border-tan/60 transition-colors"
+                />
+                <button
+                  onClick={handleCalculateShipping}
+                  disabled={shippingLoading}
+                  className="bg-green/20 hover:bg-green/30 disabled:opacity-60 border border-green/30 text-cream text-sm font-medium px-3 py-2 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  {shippingLoading ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <ChevronRight size={14} />
+                  )}
+                  {shippingLoading ? "" : "Calcular"}
+                </button>
+              </div>
+              {shippingError && (
+                <p className="text-red-400 text-xs">{shippingError}</p>
+              )}
+
+              {/* Shipping options */}
+              {shippingCalculated && shippingOptions.length > 0 && (
+                <div className="flex flex-col gap-1.5 mt-1">
+                  {shippingOptions.map((option) => {
+                    const isSelected = selectedShipping?.id === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => setShipping(isSelected ? null : option)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-colors cursor-pointer ${
+                          isSelected
+                            ? "bg-tan/15 border-tan/60 text-cream"
+                            : "bg-green/10 border-green/20 text-cream/80 hover:border-green/50"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-semibold">
+                            {option.company.name} — {option.name}
+                          </span>
+                          <span className="text-cream/50 text-xs">
+                            {option.delivery_time} {option.delivery_time === 1 ? "dia útil" : "dias úteis"}
+                          </span>
+                        </div>
+                        <span className={`text-sm font-bold ${isSelected ? "text-tan" : "text-cream/80"}`}>
+                          {formatPrice(parseFloat(option.price))}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+
+            {/* Totals */}
+            {selectedShipping ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-cream/50 text-sm">Subtotal</span>
+                  <span className="text-cream/70 text-sm">{formatPrice(subtotalPrice)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-cream/50 text-sm">Frete</span>
+                  <span className="text-cream/70 text-sm">{formatPrice(parseFloat(selectedShipping.price))}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-green/20 pt-1.5 mt-0.5">
+                  <span className="text-cream/60 text-sm">Total</span>
+                  <span className="text-2xl font-bold text-tan">{formatPrice(totalPrice)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <span className="text-cream/60 text-sm">Total</span>
+                <span className="text-2xl font-bold text-tan">{formatPrice(totalPrice)}</span>
+              </div>
+            )}
+
             {error && (
               <p className="text-red-400 text-xs text-center">{error}</p>
             )}
             <button
               onClick={() => setStep("form")}
-              className="bg-brown hover:bg-brown/80 text-dark-green font-bold py-4 rounded-full text-center text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brown/20 cursor-pointer"
+              disabled={!selectedShipping}
+              className="bg-brown hover:bg-brown/80 disabled:opacity-40 disabled:cursor-not-allowed text-dark-green font-bold py-4 rounded-full text-center text-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-brown/20 cursor-pointer"
             >
               Finalizar Compra
             </button>
-            <p className="text-cream/30 text-xs text-center">
-              Você será redirecionado ao Mercado Pago para pagamento seguro.
-            </p>
+            {!selectedShipping && (
+              <p className="text-cream/40 text-xs text-center">
+                Calcule e selecione uma opção de frete para continuar.
+              </p>
+            )}
+            {selectedShipping && (
+              <p className="text-cream/30 text-xs text-center">
+                Você será redirecionado ao Mercado Pago para pagamento seguro.
+              </p>
+            )}
           </div>
         )}
         </>
